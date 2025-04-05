@@ -20,28 +20,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             MAPD721_ProjectTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
+                    LoginScreen(
+                        modifier = Modifier.padding(innerPadding),
+                        onLoginClick = { email, password ->
+                            println("Login with email: $email, password: $password")
+                        },
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    MAPD721_ProjectTheme {
-        Greeting("Android")
     }
 }
