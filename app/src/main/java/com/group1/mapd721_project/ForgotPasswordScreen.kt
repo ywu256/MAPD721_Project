@@ -1,4 +1,4 @@
-package com.yulingwu.mapd721_project
+package com.group1.mapd721_project
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
