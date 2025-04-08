@@ -35,7 +35,8 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onSignUpClick = {
                                     navController.navigate("signup")
-                                }
+                                },
+                                onForgotPasswordClick = { navController.navigate("forgot_password") }
                             )
                         }
                         /* Sign Up Screen */
@@ -47,6 +48,15 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onLoginClick = {
                                     navController.popBackStack()
+                                }
+                            )
+                        }
+                        /* Forgot Password Screen */
+                        composable("forgot_password") {
+                            ForgotPasswordScreen(
+                                onBackToLogin = { navController.popBackStack() },
+                                onSendResetEmail = { email ->
+                                    println("Send reset email to $email")
                                 }
                             )
                         }
