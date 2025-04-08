@@ -1,4 +1,4 @@
-package com.yulingwu.mapd721_project.ui.theme
+package com.group1.mapd721_project.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

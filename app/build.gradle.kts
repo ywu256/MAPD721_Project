@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.yulingwu.mapd721_project"
+    namespace = "com.group1.mapd721_project"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.yulingwu.mapd721_project"
+        applicationId = "com.group1.mapd721_project"
         minSdk = 24
         targetSdk = 35
         versionCode = 1

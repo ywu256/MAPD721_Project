@@ -1,4 +1,4 @@
-package com.yulingwu.mapd721_project
+package com.group1.mapd721_project
 
 import org.junit.Test
 

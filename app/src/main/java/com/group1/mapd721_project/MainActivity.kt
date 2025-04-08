@@ -1,4 +1,4 @@
-package com.yulingwu.mapd721_project
+package com.group1.mapd721_project
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -11,7 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.yulingwu.mapd721_project.ui.theme.MAPD721_ProjectTheme
+import com.group1.mapd721_project.ui.theme.MAPD721_ProjectTheme
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
