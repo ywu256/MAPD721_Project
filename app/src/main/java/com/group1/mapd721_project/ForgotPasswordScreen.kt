@@ -1,15 +1,20 @@
 package com.group1.mapd721_project
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun ForgotPasswordScreen(
@@ -17,6 +22,9 @@ fun ForgotPasswordScreen(
     onBackToLogin: () -> Unit = {},
     onSendResetEmail: (String) -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
@@ -66,11 +74,23 @@ fun ForgotPasswordScreen(
 
         Button(
             onClick = {
-                if (email.isNotBlank()) {
-                    onSendResetEmail(email)
-                    message = "Password reset email for $email"
+                if (email.isNotBlank() && password.isNotBlank()) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val (storedEmail, _) = userPrefs.getUser()
+                        if (email == storedEmail) {
+                            userPrefs.updatePassword(password)
+
+                            // Navigate back to Login screen after reset password successfully
+                            CoroutineScope(Dispatchers.Main).launch {
+                                Toast.makeText(context, "Password updated successfully", Toast.LENGTH_SHORT).show()
+                                onBackToLogin()
+                            }
+                        } else {
+                            message = "Email not found or incorrect."
+                        }
+                    }
                 } else {
-                    message = "Please enter your Email."
+                    message = "Please enter both Email and new Password."
                 }
             },
             modifier = Modifier.fillMaxWidth()
