@@ -6,10 +6,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.yulingwu.mapd721_project.data.UserPreferencesManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun SignUpScreen(
@@ -17,6 +22,9 @@ fun SignUpScreen(
     onSignUpClick: (String, String) -> Unit = { _, _ -> },
     onLoginClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -66,6 +74,9 @@ fun SignUpScreen(
         Button(
             onClick = {
                 if (email.isNotBlank() && password.isNotBlank()) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        userPrefs.saveUser(email, password)
+                    }
                     onSignUpClick(email, password)
                 } else {
                     errorMessage = "Please enter email and password."
