@@ -6,17 +6,26 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.yulingwu.mapd721_project.data.UserPreferencesManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
     onLoginClick: (String, String) -> Unit = { _, _ -> },
-    onSignUpClick: () -> Unit = {}
+    onSignUpClick: () -> Unit = {},
+    onForgotPasswordClick: () -> Unit = {}
 ) {
+    val context = LocalContext.current
+    val userPrefs = remember { UserPreferencesManager(context) }
+
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
@@ -61,13 +70,34 @@ fun LoginScreen(
             visualTransformation = PasswordVisualTransformation()
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Forgot password link
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            contentAlignment = Alignment.CenterEnd
+        ) {
+            TextButton(onClick = onForgotPasswordClick) {
+                Text("Forgot password?", style = MaterialTheme.typography.bodyLarge)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         /* Login Button */
         Button(
             onClick = {
                 if (email.isNotBlank() && password.isNotBlank()) {
-                    onLoginClick(email, password)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val (storedEmail, storedPassword) = userPrefs.getUser()
+                        if (email == storedEmail && password == storedPassword) {
+                            onLoginClick(email, password)
+                        } else {
+                            errorMessage = "Incorrect email or password."
+                        }
+                    }
                 } else {
                     errorMessage = "Please enter email and password."
                 }
