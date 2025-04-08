@@ -1,10 +1,13 @@
 package com.group1.mapd721_project
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -15,6 +18,7 @@ fun ForgotPasswordScreen(
     onSendResetEmail: (String) -> Unit = {}
 ) {
     var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var message by remember { mutableStateOf("") }
 
     Column(
@@ -24,15 +28,38 @@ fun ForgotPasswordScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        /* Logo */
+        Image(
+            painter = painterResource(id = R.drawable.logo),
+            contentDescription = "App Logo",
+            modifier = Modifier
+                .size(180.dp)
+                .padding(bottom = 16.dp)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
         Text("Reset Password", style = MaterialTheme.typography.headlineMedium)
 
         Spacer(modifier = Modifier.height(24.dp))
 
+        /* Email */
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
-            label = { Text("Enter your email") },
+            label = { Text("Enter your Email") },
             modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        /* New Password */
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Enter new Password") },
+            modifier = Modifier.fillMaxWidth(),
+            visualTransformation = PasswordVisualTransformation()
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -41,14 +68,14 @@ fun ForgotPasswordScreen(
             onClick = {
                 if (email.isNotBlank()) {
                     onSendResetEmail(email)
-                    message = "Password reset email sent to $email"
+                    message = "Password reset email for $email"
                 } else {
-                    message = "Please enter your email."
+                    message = "Please enter your Email."
                 }
             },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text("Send Reset Email")
+            Text("Reset Password", style = MaterialTheme.typography.bodyLarge)
         }
 
         if (message.isNotEmpty()) {
@@ -59,7 +86,7 @@ fun ForgotPasswordScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         TextButton(onClick = onBackToLogin) {
-            Text("Back to Login")
+            Text("Back to Login", style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

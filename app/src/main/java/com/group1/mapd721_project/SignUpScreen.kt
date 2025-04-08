@@ -35,6 +35,7 @@ fun SignUpScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        /* Logo */
         Image(
             painter = painterResource(id = R.drawable.logo),
             contentDescription = "App Logo",
