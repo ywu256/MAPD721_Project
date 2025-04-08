@@ -1,4 +1,4 @@
-package com.group1.mapd721_project.data
+package com.yulingwu.mapd721_project
 
 import android.content.Context
 import androidx.datastore.preferences.core.*
