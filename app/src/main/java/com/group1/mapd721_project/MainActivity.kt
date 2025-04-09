@@ -63,7 +63,13 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable("medication_list") {
-                            MedicationListScreen()
+                            MedicationListScreen(
+                                onAddMedicationClick = { navController.navigate("add_medication") },
+                                //onLogoutClick = { navController.navigate("login") }
+                            )
+                        }
+                        composable("add_medication") {
+                            AddMedicineScreen()
                         }
                     }
                 }

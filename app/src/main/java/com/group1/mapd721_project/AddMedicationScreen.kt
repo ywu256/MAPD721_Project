@@ -1,7 +1,9 @@
 package com.group1.mapd721_project
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -14,10 +16,14 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -27,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
@@ -39,88 +46,138 @@ fun AddMedicineScreen() {
     val formats = listOf("Capsule", "Tablet", "Liquid", "Topical", "Others")
     // frequency list
     val frequency = listOf("Everyday", "Specific Days of the Week", "Every Few Days")
-    // initially selecred the first item of the list
+    // initially selected the first item of the list
     var selectedFrequency by remember { mutableStateOf(frequency[0]) }
     var isExpanded by remember { mutableStateOf(false) }
     val (selectedFormat, onOptionSelected) = remember { mutableStateOf(formats[0]) }
     var medicationName by remember { mutableStateOf("") }
     var medicationDosage by remember { mutableStateOf("") }
     var medicationDuration by remember { mutableStateOf("") }
-    // added a dependicies to use java date and time library
+    // added a dependency to use java date and time library
     var remainderTime by remember { mutableStateOf(LocalTime.now()) }
 
+    val horizontalPadding = 16.dp
+    val verticalSpacing = 16.dp
+    val sectionSpacing = 24.dp
 
-    Column(
-        modifier = Modifier
-            //.background(Color.LightGray)
-            .verticalScroll(rememberScrollState())
-    ) {
-//        repeat(10) {
-//            Text("Item $it", modifier = Modifier.padding(2.dp))
-//        }
-        Text("Medicine Name:", fontWeight = FontWeight.Bold, fontSize = 30.sp)
-        OutlinedTextField(
-            value = medicationName,
-            onValueChange = { medicationName = it },
-            label = { Text("Medication Name") },
-            placeholder = { Text("Please input your ID") }
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text("Formats:", fontWeight = FontWeight.Bold, fontSize = 30.sp)
-        Column(Modifier.selectableGroup()) {
-            formats.forEach { text ->
-                Row(
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("New Medication") },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = horizontalPadding, vertical = 8.dp)
+            ) {
+                // medicine name section
+                Text(
+                    text = "Medicine Name:",
+                    fontSize = 20.sp,
+                    modifier = Modifier.padding(top = verticalSpacing)
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = medicationName,
+                    onValueChange = { medicationName = it },
+                    label = { Text("Medication Name") },
+                    placeholder = { Text("Enter medication name") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(sectionSpacing))
+                // format section
+                Text(
+                    text = "Format:",
+                    fontSize = 20.sp,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                // radio buttons for each format option
+                Column(
                     Modifier
+                        .selectableGroup()
                         .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(6.dp)
-                        .selectable(
-                            selected = (text == selectedFormat),
-                            onClick = { onOptionSelected(text) },
-                            role = Role.RadioButton
-                        )
-                        .padding(horizontal = 16.dp)
                 ) {
-                    RadioButton(
-                        selected = (text == selectedFormat),
-                        onClick = null
-                    )
-                    Text(
-                        text = text,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
+                    formats.forEach { text ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .selectable(
+                                    selected = (text == selectedFormat),
+                                    onClick = { onOptionSelected(text) },
+                                    role = Role.RadioButton
+                                )
+                                .padding(vertical = 4.dp)
+                        ) {
+                            RadioButton(
+                                selected = (text == selectedFormat),
+                                onClick = null
+                            )
+                            Text(
+                                text = text,
+                                modifier = Modifier
+                                    .padding(start = 12.dp)
+                                    .align(Alignment.CenterVertically)
+                            )
+                        }
+                    }
                 }
-            }
-            // Text(selectedFormat) used to test selectedFormat later
-            // resume from here, inside of the Column
-            Spacer(modifier = Modifier.height(5.dp))
-            Text("Dosage:", fontWeight = FontWeight.Bold, fontSize = 30.sp)
-            OutlinedTextField(
-                value = medicationDosage,
-                onValueChange = { medicationDosage = it },
-                label = { Text("Dosage") },
-                placeholder = { Text("Please input your ID") })
-            Spacer(modifier = Modifier.height(10.dp))
-            // which time to take the medication
-            Text("Frequency:", fontWeight = FontWeight.Bold, fontSize = 30.sp)
-            Spacer(modifier = Modifier.height(10.dp))
-            Column (
-                modifier = Modifier.fillMaxWidth()
-            ){
+
+                Spacer(modifier = Modifier.height(sectionSpacing))
+                // Dosage Section
+                Text(
+                    text = "Dosage",
+                    fontSize = 20.sp,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = medicationDosage,
+                    onValueChange = { medicationDosage = it },
+                    label = { Text("Dosage") },
+                    placeholder = { Text("Enter dosage amount") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(sectionSpacing))
+                // Frequency Section
+                Text(
+                    text = "Frequency",
+                    fontSize = 20.sp,
+                )
+                Spacer(modifier = Modifier.height(8.dp))
                 ExposedDropdownMenuBox(
                     expanded = isExpanded,
                     onExpandedChange = { isExpanded = !isExpanded },
+                    modifier = Modifier.fillMaxWidth()
                 ) {
                     TextField(
-                        modifier = Modifier.menuAnchor(),
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
                         value = selectedFrequency,
                         onValueChange = {},
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isExpanded) },
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary
+                        )
                     )
                     ExposedDropdownMenu(
                         expanded = isExpanded,
                         onDismissRequest = { isExpanded = false },
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         frequency.forEach { selected ->
                             DropdownMenuItem(
@@ -133,21 +190,28 @@ fun AddMedicineScreen() {
                         }
                     }
                 }
+                when (selectedFrequency) {
+                    "Specific Days of the Week" -> {
+                        Spacer(modifier = Modifier.height(verticalSpacing))
+                        Text("Days of the week:", fontSize = 16.sp)
+                       // display checkboxes for each day of the week
+
+                    }
+                    "Every Few Days" -> {
+                        Spacer(modifier = Modifier.height(verticalSpacing))
+                        Text("Interval (days):", fontSize = 16.sp)
+                        // add inverval choisce radio or dropdown box
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(80.dp))
             }
-            // test selected frequency
-            // add more elements inside the column
-            Text("currently selected: " + selectedFrequency)
-            Spacer(modifier = Modifier.height(10.dp))
         }
     }
-
-
 }
-
-
 
 @Preview(showBackground = true)
 @Composable
-fun AddMedicineScreePreview() {
+fun AddMedicineScreenPreview() {
     AddMedicineScreen()
 }
