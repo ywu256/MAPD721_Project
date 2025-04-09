@@ -1,5 +1,6 @@
 package com.group1.mapd721_project
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -93,9 +94,14 @@ fun LoginScreen(
                     CoroutineScope(Dispatchers.IO).launch {
                         val (storedEmail, storedPassword) = userPrefs.getUser()
                         if (email == storedEmail && password == storedPassword) {
-                            onLoginClick(email, password)
+                            CoroutineScope(Dispatchers.Main).launch {
+                                Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
+                                onLoginClick(email, password)
+                            }
                         } else {
-                            errorMessage = "Incorrect email or password."
+                            CoroutineScope(Dispatchers.Main).launch {
+                                errorMessage = "Incorrect email or password."
+                            }
                         }
                     }
                 } else {

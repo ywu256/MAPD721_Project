@@ -31,7 +31,9 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             LoginScreen(
                                 onLoginClick = { email, password ->
-                                    println("Login: $email")
+                                    navController.navigate("medication_list") {
+                                        popUpTo("login") { inclusive = true }
+                                    }
                                 },
                                 onSignUpClick = {
                                     navController.navigate("signup")
@@ -59,6 +61,9 @@ class MainActivity : ComponentActivity() {
                                     println("Send reset email to $email")
                                 }
                             )
+                        }
+                        composable("medication_list") {
+                            MedicationListScreen()
                         }
                     }
                 }
