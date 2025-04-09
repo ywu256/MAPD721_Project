@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
                         composable("login") {
                             LoginScreen(
                                 onLoginClick = { email, password ->
-                                    navController.navigate("medication_list") {
+                                    navController.navigate("home") {
                                         popUpTo("login") { inclusive = true }
                                     }
                                 },
@@ -62,10 +62,18 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
+                        /* Home Screen */
+                        composable("home") {
+                            HomeScreen(
+                                onNavigate = { navController.navigate(it) },
+                                currentRoute = "home"
+                            )
+                        }
+                        /* Medication Screen */
                         composable("medication_list") {
                             MedicationListScreen(
-                                onAddMedicationClick = { navController.navigate("add_medication") },
-                                //onLogoutClick = { navController.navigate("login") }
+                                onNavigate = { navController.navigate(it) },
+                                currentRoute = "medication_list"
                             )
                         }
                         composable("add_medication") {
