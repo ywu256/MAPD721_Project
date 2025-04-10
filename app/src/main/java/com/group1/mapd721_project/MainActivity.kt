@@ -88,6 +88,14 @@ class MainActivity : ComponentActivity() {
 
                             )
                         }
+                        composable("medication_detail/{medicationId}",) { backStackEntry ->
+                            val medicationId = backStackEntry.arguments?.getString("medicationId") ?: ""
+                            MedicationDetails(
+                                medicationId = medicationId,
+                                onNavigateBack = { navController.popBackStack() },
+                               // onEditClick = { /* handle edit medication */ }
+                            )
+                        }
                         /* Settings Screen */
                         composable("settings") {
                             SettingsScreen(

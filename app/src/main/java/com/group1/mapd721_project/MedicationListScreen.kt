@@ -100,7 +100,10 @@ fun MedicationListScreen(
                 items(medications) { med ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(4.dp)
+                        elevation = CardDefaults.cardElevation(4.dp),
+                        onClick = {
+                            onNavigate("medication_detail/${med.replace(" ", "_")}")
+                        }
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(text = med, style = MaterialTheme.typography.bodyLarge)
