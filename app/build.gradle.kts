@@ -71,4 +71,5 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     // added dependicies
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
+    implementation ("androidx.compose.material3:material3:1.3.2")
 }
