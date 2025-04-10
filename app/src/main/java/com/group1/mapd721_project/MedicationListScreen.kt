@@ -1,14 +1,9 @@
 package com.group1.mapd721_project
 
-import android.R.attr.maxLines
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,10 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+data class Medication(
+    val name: String,
+    val format: String,
+    val dosage: String,
+    val frequency: String,
+    val time: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,11 +31,30 @@ fun MedicationListScreen(
     onNavigate: (String) -> Unit = {}, // for navController.navigate
     currentRoute: String = "medication_list"
 ) {
+    // Mock medication data
     val medications = remember {
         mutableStateListOf(
-            "Metformin 500mg",
-            "Lisinopril 10mg",
-            "Atorvastatin 20mg"
+            Medication(
+                name = "Metformin",
+                format = "Tablet",
+                dosage = "500mg",
+                frequency = "Everyday",
+                time = "08:00 AM"
+            ),
+            Medication(
+                name = "Vitamin D",
+                format = "Capsule",
+                dosage = "1000 IU",
+                frequency = "Specific Days of the Week",
+                time = "09:00 AM"
+            ),
+            Medication(
+                name = "Ibuprofen",
+                format = "Liquid",
+                dosage = "200mg",
+                frequency = "Every Few Days",
+                time = "07:30 PM"
+            )
         )
     }
 
@@ -42,7 +62,7 @@ fun MedicationListScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(
-                    "Your Medications",
+                    "Medications",
                     fontWeight = FontWeight.Bold,
                     style = MaterialTheme.typography.headlineMedium
                 ) },
@@ -99,14 +119,68 @@ fun MedicationListScreen(
             ) {
                 items(medications) { med ->
                     Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        elevation = CardDefaults.cardElevation(4.dp),
-                        onClick = {
-                            onNavigate("medication_detail/${med.replace(" ", "_")}")
-                        }
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Text(text = med, style = MaterialTheme.typography.bodyLarge)
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp)
+                        ) {
+                            // Medication name and type
+                            Text(
+                                text = "${med.name} (${med.format})",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            // Medication dosage
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.medication),
+                                    contentDescription = "Dosage",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Dosage: ${med.dosage}", style = MaterialTheme.typography.bodyMedium)
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Taken frequency
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.repeat),
+                                    contentDescription = "Frequency",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Frequency: ${med.frequency}", style = MaterialTheme.typography.bodyMedium)
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            // Taken time
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.schedule),
+                                    contentDescription = "Time",
+                                    modifier = Modifier.size(20.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Time: ${med.time}", style = MaterialTheme.typography.bodyMedium)
+                            }
                         }
                     }
                 }
