@@ -82,6 +82,14 @@ class MainActivity : ComponentActivity() {
 
                             )
                         }
+                        // Settings Screen
+                        composable("settings") {
+                            SettingsScreen(
+                                onNavigate = { navController.navigate(it) },
+                                onLogout = { navController.navigate("login") },
+                                currentRoute = "settings"
+                            )
+                        }
                     }
                 }
             }
