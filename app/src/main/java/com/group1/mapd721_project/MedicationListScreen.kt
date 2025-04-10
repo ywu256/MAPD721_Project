@@ -3,8 +3,10 @@ package com.group1.mapd721_project
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -54,9 +56,31 @@ fun MedicationListScreen(
                 dosage = "200mg",
                 frequency = "Every Few Days",
                 time = "07:30 PM"
+            ),
+            Medication(
+                name = "Amoxicillin",
+                format = "Tablet",
+                dosage = "250mg",
+                frequency = "Everyday",
+                time = "12:00 PM"
+            ),
+            Medication(
+                name = "Cetirizine",
+                format = "Tablet",
+                dosage = "10mg",
+                frequency = "Specific Days of the Week",
+                time = "06:30 PM"
+            ),
+            Medication(
+                name = "Omeprazole",
+                format = "Capsule",
+                dosage = "20mg",
+                frequency = "Every Few Days",
+                time = "08:00 AM"
             )
         )
     }
+    var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
         topBar = {
@@ -100,90 +124,116 @@ fun MedicationListScreen(
             }
         }
     ) { innerPadding ->
-        if (medications.isEmpty()) {
-            Box(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                label = { Text("Search Medication") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = "Search Icon"
+                    )
+                },
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("No medications yet.\nTap + to add one.", textAlign = TextAlign.Center)
-            }
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
+                    .fillMaxWidth()
                     .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(medications) { med ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 4.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            // Medication name and type
-                            Text(
-                                text = "${med.name} (${med.format})",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
+                singleLine = true,
+                shape = RoundedCornerShape(20.dp)
+            )
 
-                            Spacer(modifier = Modifier.height(8.dp))
+            val filteredMedications = medications.filter {
+                it.name.contains(searchQuery, ignoreCase = true)
+            }
 
-                            // Medication dosage
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.medication),
-                                    contentDescription = "Dosage",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Dosage: ${med.dosage}", style = MaterialTheme.typography.bodyMedium)
-                            }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            // Taken frequency
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.repeat),
-                                    contentDescription = "Frequency",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Frequency: ${med.frequency}", style = MaterialTheme.typography.bodyMedium)
-                            }
-
-                            Spacer(modifier = Modifier.height(4.dp))
-
-                            // Taken time
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.schedule),
-                                    contentDescription = "Time",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Time: ${med.time}", style = MaterialTheme.typography.bodyMedium)
-                            }
-                        }
+            if (filteredMedications.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No medications yet.\nTap + to add one.", textAlign = TextAlign.Center)
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(filteredMedications) { med ->
+                        MedicationCard(med = med)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun MedicationCard(med: Medication) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "${med.name} (${med.format})",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.medication),
+                    contentDescription = "Dosage",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Dosage: ${med.dosage}", style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.repeat),
+                    contentDescription = "Frequency",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Frequency: ${med.frequency}", style = MaterialTheme.typography.bodyMedium)
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    painter = painterResource(id = R.drawable.schedule),
+                    contentDescription = "Time",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Time: ${med.time}", style = MaterialTheme.typography.bodyMedium)
             }
         }
     }
