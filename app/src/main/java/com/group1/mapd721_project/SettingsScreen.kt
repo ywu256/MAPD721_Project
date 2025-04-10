@@ -60,10 +60,7 @@ fun SettingsScreen (
                 )
             },
             bottomBar = {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ) {
+                NavigationBar {
                     NavigationBarItem(
                         selected = currentRoute == "home",
                         onClick = { onNavigate("home") },
