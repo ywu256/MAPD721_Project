@@ -2,6 +2,7 @@ package com.group1.mapd721_project
 
 import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,12 +24,12 @@ import com.group1.mapd721_project.ui.theme.MAPD721_ProjectTheme
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(showBackground = true)
 @Composable
 fun SettingsScreen (
     onLogout: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
-    currentRoute: String = "settings"
+    currentRoute: String = "settings",
+    userPreferencesManager: UserPreferencesManager
 ) {
     val context = LocalContext.current
     val userPrefs = remember { UserPreferencesManager(context) }
@@ -37,6 +38,7 @@ fun SettingsScreen (
     var email by remember { mutableStateOf("") }
     var darkModeEnabled by remember { mutableStateOf(false) }
     var bluetoothEnabled by remember { mutableStateOf(false) }
+    var showLogoutAlert by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val userData = userPrefs.getUser()
@@ -59,7 +61,10 @@ fun SettingsScreen (
                 )
             },
             bottomBar = {
-                NavigationBar {
+                NavigationBar (
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
                     NavigationBarItem(
                         selected = currentRoute == "home",
                         onClick = { onNavigate("home") },
@@ -186,7 +191,11 @@ fun SettingsScreen (
                         )
                         Switch(
                             checked = darkModeEnabled,
-                            onCheckedChange = { darkModeEnabled = it }
+                            onCheckedChange = {
+                                darkModeEnabled = it
+                            scope.launch{
+                                userPreferencesManager.setDarkModeEnabled(it)
+                            }}
                         )
                     }
                 }
@@ -194,21 +203,47 @@ fun SettingsScreen (
                 Spacer(modifier = Modifier.height(16.dp))
                 Spacer(Modifier.weight(1f))
                 // Logout Button
-                Button(
-                    onClick = {
-                        scope.launch {
-                            userPrefs.clearUser()
-                            Toast.makeText(context, "Logged out successfully", Toast.LENGTH_SHORT)
-                                .show()
-                            onLogout()
+                if (showLogoutAlert) {
+                    AlertDialog(
+                        onDismissRequest = {showLogoutAlert = false},
+                        title = {Text("Confirm Logout")},
+                        text = {Text("Are you sure you want to logout?")},
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        userPrefs.clearUser()
+                                        Toast.makeText(context, "Logged out successfully", Toast.LENGTH_SHORT)
+                                            .show()
+                                        onLogout()
+                                        showLogoutAlert = false
+                                    }
+                                }
+                            ) {
+                                Text("Yes")
+                            }
+                        },
+                        dismissButton = {
+                            Button(
+                                onClick = {showLogoutAlert = false}
+                            ) {
+                                Text("No")
+                            }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Logout", style = MaterialTheme.typography.bodyLarge)
+                    )
                 }
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Button(
+                        onClick = { showLogoutAlert = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Logout",
+                            style = MaterialTheme.typography.bodyLarge)
+                    }
+                }
+            }
             }
         }
     }
-}
+
 
