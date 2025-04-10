@@ -1,5 +1,7 @@
 package com.group1.mapd721_project
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -9,6 +11,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,9 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -26,7 +33,20 @@ fun HomeScreen(
     currentRoute: String = "home"
 ) {
     var selectedDate by remember { mutableStateOf("Today") }
-    val dateOptions = listOf("Yesterday", "Today", "Tomorrow", "11/05/23", "12/05/23")
+    val dateOptions = remember {
+        val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+        val today = LocalDate.now()
+        val days = listOf(0, 1, 2, 3, 4)
+
+        days.map { offset ->
+            val date = today.plusDays(offset.toLong())
+            when (offset) {
+                0 -> "Today"
+                1 -> "Tomorrow "
+                else -> date.format(formatter)
+            }
+        }
+    }
 
     val reminders = listOf(
         Triple("ASCAP tablets", "123 mg", false),
@@ -48,21 +68,29 @@ fun HomeScreen(
                             painter = painterResource(id = R.drawable.logo),
                             contentDescription = "Logo",
                             modifier = Modifier
-                                .size(32.dp)
+                                .size(64.dp)
                         )
 
                         Spacer(modifier = Modifier.width(12.dp))
 
                         Text(
                             "Welcome back",
-                            fontSize = 30.sp,
+                            fontSize = 25.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
+
                         Spacer(modifier = Modifier.weight(1f))
+
                         IconButton(onClick = { /* TODO: Calendar click */ }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.today),
+                                contentDescription = null // decorative element
+                            )
+                        }
+                        IconButton(onClick = { /* TODO: Notification click */ }) {
+                            Icon(
+                                Icons.Default.Notifications,
                                 contentDescription = null // decorative element
                             )
                         }
@@ -160,4 +188,13 @@ fun HomeScreen(
             }
         }
     }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun HomeScreenPreview() {
+    HomeScreen(
+        onNavigate = {},
+        currentRoute = "home"
+    )
 }
