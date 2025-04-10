@@ -46,11 +46,16 @@ fun SettingsScreen (
     MAPD721_ProjectTheme(darkTheme = darkModeEnabled) {
         Scaffold(
             topBar = {
-                TopAppBar(
+                CenterAlignedTopAppBar(
                     title = { Text(
                         "Settings",
+                        fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.headlineMedium
-                    ) }
+                    ) },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
                 )
             },
             bottomBar = {
