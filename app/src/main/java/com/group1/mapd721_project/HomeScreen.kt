@@ -18,6 +18,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -26,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -38,7 +40,6 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-
 import kotlinx.coroutines.delay
 
 // Create a companion object to store the pillbox state
@@ -46,7 +47,7 @@ object PillboxStateManager {
     val connectedPillboxes = mutableStateListOf<String>()
     val availablePillboxes = mutableStateListOf<String>()
 
-    // Initialize with default available pillboxes if not already initialized
+    // Initializing with default available pillboxes
     fun initializeIfNeeded() {
         if (availablePillboxes.isEmpty() && connectedPillboxes.isEmpty()) {
             availablePillboxes.addAll(listOf("Pillbox A", "Pillbox B", "Pillbox C"))
@@ -57,11 +58,17 @@ object PillboxStateManager {
         availablePillboxes.addAll(connectedPillboxes)
         connectedPillboxes.clear()
     }
+    // New function for disconnecting a specific pillbox
+    fun disconnectPillbox(pillboxName: String) {
+        if (connectedPillboxes.contains(pillboxName)) {
+            connectedPillboxes.remove(pillboxName)
+            availablePillboxes.add(pillboxName)
+        }
+    }
 }
 
 @OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigate: (String) -> Unit = {},
@@ -82,12 +89,21 @@ fun HomeScreen(
     val connectionCompleted = remember { mutableStateOf(false) }
     val animatingPillbox = remember { mutableStateOf<String?>(null) }
 
+    // Animation states for disconnecting
+    val disconnectingPillbox = remember { mutableStateOf<String?>(null) }
+    val isDisconnecting = remember { mutableStateOf(false) }
+    val disconnectionCompleted = remember { mutableStateOf(false) }
+
     // Bluetooth states
     var showPillboxSelection by remember { mutableStateOf(false) }
     var isConnecting by remember { mutableStateOf(false) }
     var pillboxToConnect by remember { mutableStateOf<String?>(null) }
     val isBluetoothEnabled by bluetoothManager.isBluetoothEnabled.collectAsState()
     val showBluetoothDialog by bluetoothManager.showBluetoothDialog.collectAsState()
+
+    // State for disconnect confirmation dialog
+    var showDisconnectDialog by remember { mutableStateOf(false) }
+    var pillboxToDisconnect by remember { mutableStateOf<String?>(null) }
 
     // Launcher for Bluetooth enable request
     val bluetoothEnableLauncher = rememberLauncherForActivityResult(
@@ -112,26 +128,45 @@ fun HomeScreen(
         if (currentPillbox != null) {
             isConnecting = true
             animatingPillbox.value = currentPillbox
-
+            connectionCompleted.value = false
             // Simulate connection time
             delay(2000)
-
-            // Connection completed
-            isConnecting = false
             connectionCompleted.value = true
-
+            delay(1000)
+            isConnecting = false
             // Move pillbox from available to connected list with animation
             delay(300) // Slight delay before starting the transfer
             if (availablePillboxes.contains(currentPillbox)) {
                 availablePillboxes.remove(currentPillbox)
                 connectedPillboxes.add(currentPillbox)
             }
-
             // Reset states
             delay(500)
             connectionCompleted.value = false
             animatingPillbox.value = null
             pillboxToConnect = null
+        }
+    }
+    // Handle pillbox disconnection animation
+    LaunchedEffect(disconnectingPillbox.value) {
+        val pillbox = disconnectingPillbox.value
+        if (pillbox != null) {
+            isDisconnecting.value = true
+            // Simulate disconnection time
+            delay(1500)
+            // Mark disconnection as complete
+            disconnectionCompleted.value = true
+            delay(1000)
+            // Move pillbox from connected to available
+            if (connectedPillboxes.contains(pillbox)) {
+                connectedPillboxes.remove(pillbox)
+                availablePillboxes.add(pillbox)
+            }
+            // Reset states
+            delay(500)
+            isDisconnecting.value = false
+            disconnectionCompleted.value = false
+            disconnectingPillbox.value = null
         }
     }
 
@@ -148,6 +183,21 @@ fun HomeScreen(
     val connectToPillbox: (String) -> Unit = { pillbox ->
         showPillboxSelection = false
         pillboxToConnect = pillbox
+    }
+
+    // Function to initiate pillbox disconnection
+    val initiateDisconnect: (String) -> Unit = { pillbox ->
+        pillboxToDisconnect = pillbox
+        showDisconnectDialog = true
+    }
+
+    // Function to confirm disconnection
+    val confirmDisconnect: () -> Unit = {
+        pillboxToDisconnect?.let { pillbox ->
+            showDisconnectDialog = false
+            disconnectingPillbox.value = pillbox
+            pillboxToDisconnect = null
+        }
     }
 
     // Bluetooth Enable Dialog
@@ -221,6 +271,29 @@ fun HomeScreen(
         )
     }
 
+    // Disconnect Confirmation Dialog
+    if (showDisconnectDialog) {
+        AlertDialog(
+            onDismissRequest = { showDisconnectDialog = false },
+            title = { Text("Disconnect Pillbox") },
+            text = { Text("Do you want to disconnect from ${pillboxToDisconnect}?") },
+            confirmButton = {
+                Button(
+                    onClick = confirmDisconnect
+                ) {
+                    Text("Yes, Disconnect")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDisconnectDialog = false }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     // Connection Progress Dialog with Animation
     if (isConnecting) {
         AlertDialog(
@@ -233,7 +306,6 @@ fun HomeScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Use null-safe access for pillboxToConnect
                     val currentPillbox = pillboxToConnect
                     Text("Connecting to ${currentPillbox ?: "selected pillbox"}...")
                     Spacer(modifier = Modifier.height(16.dp))
@@ -281,6 +353,73 @@ fun HomeScreen(
             dismissButton = {}
         )
     }
+
+    // Disconnection Progress Dialog
+    if (isDisconnecting.value) {
+        AlertDialog(
+            onDismissRequest = { /* Don't allow dismiss while disconnecting */ },
+            title = { Text("Disconnecting...") },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val currentPillbox = disconnectingPillbox.value
+                    Text("Disconnecting from ${currentPillbox ?: "pillbox"}...")
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Animated progress indicator
+                    val progressAnimation = remember { mutableStateOf(0f) }
+
+                    LaunchedEffect(isDisconnecting.value) {
+                        // Animate from 0 to 1 over the disconnection duration
+                        val steps = 100
+                        val stepDuration = 1500 / steps
+                        for (i in 1..steps) {
+                            progressAnimation.value = i.toFloat() / steps
+                            delay(stepDuration.toLong())
+                        }
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { progressAnimation.value },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Show animation completion message
+                    AnimatedVisibility(
+                        visible = disconnectionCompleted.value,
+                        enter = fadeIn(
+                            initialAlpha = 0f,
+                            animationSpec = tween(durationMillis = 500)
+                        ) + slideInVertically(
+                            initialOffsetY = { it },
+                            animationSpec = tween(durationMillis = 500)
+                        ),
+                        exit = fadeOut(
+                            animationSpec = tween(durationMillis = 500)
+                        )
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 16.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = "Disconnected",
+                                tint = Color.Green
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Disconnected successfully!")
+                        }
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {}
+        )
+    }
+
 
     Scaffold(
         topBar = {
@@ -460,7 +599,15 @@ fun HomeScreen(
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(bottom = 8.dp),
+                                .padding(bottom = 8.dp)
+                                // Add pointerInput to detect long press
+                                .pointerInput(Unit) {
+                                    detectTapGestures(
+                                        onLongPress = {
+                                            initiateDisconnect(pillbox)
+                                        }
+                                    )
+                                },
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         ) {
                             Row(
