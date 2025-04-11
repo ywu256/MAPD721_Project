@@ -1,5 +1,6 @@
 package com.group1.mapd721_project
 import android.app.TimePickerDialog
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -51,6 +52,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.Role.Companion.Button
@@ -60,6 +62,13 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.withContext
+import java.time.DayOfWeek
+import java.util.UUID
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,7 +76,9 @@ import java.time.format.DateTimeFormatter
 fun AddMedicineScreen(
     currentRoute: String = "medication_list",
     onNavigate: (String) -> Unit = {},
-    navController: NavController
+    navController: NavController,
+    medicineDataStore: MedicineDataStore = MedicineDataStore(LocalContext.current),
+    medicineAlarmManager: MedicineAlarmManager = MedicineAlarmManager(LocalContext.current)
 ) {
     // medicine format list
     val formats = listOf("Capsule", "Tablet", "Liquid", "Topical", "Others")
@@ -102,6 +113,8 @@ fun AddMedicineScreen(
     val horizontalPadding = 16.dp
     val verticalSpacing = 16.dp
     val sectionSpacing = 24.dp
+
+    //val medicineDataStore by remember { mutableStateOf(MedicineDataStore(context) }
 
     Scaffold(
         topBar = {
@@ -329,12 +342,48 @@ fun AddMedicineScreen(
                 Spacer(modifier = Modifier.height(sectionSpacing))
                 Button(
                     onClick = {
-                        // save medicine to datastore, and navigate to medication list screen
+                       CoroutineScope(Dispatchers.IO).launch {
+                           val frequency = when(selectedFrequency) {
+                               "Everyday" -> Frequency.DAILY
+                               "Specific Days of the Week" -> Frequency.WEEKLY
+                               "Every Few Days" -> Frequency.INTERVAL
+                               else -> Frequency.DAILY
+                           }
+                           Log.d("MedicineDebug", "Frequency set to: $selectedFrequency")
+                           val days = if(selectedFrequency == "Specific Days of the Week") {
+                               selectedDays.map {
+                                   DaysOfWeek.valueOf(it)
+                               }
+                           } else {
+                               emptyList()
+                           }
+                           val intervalValue = if(selectedFrequency == "Every Few Days") {
+                               dayInterval.toIntOrNull() ?: 0
+                           } else {
+                               0
+                           }
+                           val newMedicine = MedicineModel(
+                               name = medicationName,
+                               time = formattedTime,
+                               frequency = frequency,
+                               format = selectedFormat,
+                               dosage = medicationDosage,
+                               daysOfWeek = days,
+                               interval = intervalValue
+                           )
+                           medicineDataStore.saveMedicine(newMedicine)
+                           medicineAlarmManager.scheduleMedicineReminder(newMedicine)
+
+                           withContext(Dispatchers.Main) {
+                               navController.popBackStack()
+                           }
+                       }
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("Save")
                 }
+
 
             }
         }
