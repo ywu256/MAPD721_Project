@@ -1,5 +1,8 @@
 package com.group1.mapd721_project
 
+import android.Manifest
+import android.app.Notification
+import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
@@ -24,9 +27,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
-
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,8 +40,8 @@ fun HomeScreen(
     onNavigate: (String) -> Unit = {},
     currentRoute: String = "home"
 ) {
-    val connectedPillboxes = listOf("Pillbox A")
 
+    val connectedPillboxes = listOf("Pillbox A")
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
