@@ -1,8 +1,5 @@
 package com.group1.mapd721_project
 
-import android.Manifest
-import android.app.Notification
-import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,18 +31,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 // Create a companion object to store the pillbox state
 object PillboxStateManager {
     val connectedPillboxes = mutableStateListOf<String>()
     val availablePillboxes = mutableStateListOf<String>()
+    val pillboxToMedicationMap = mutableStateMapOf<String, MedicineModel>()
 
     // Initializing with default available pillboxes
     fun initializeIfNeeded() {
@@ -57,13 +50,6 @@ object PillboxStateManager {
         // Move all connected devices back to available
         availablePillboxes.addAll(connectedPillboxes)
         connectedPillboxes.clear()
-    }
-    // New function for disconnecting a specific pillbox
-    fun disconnectPillbox(pillboxName: String) {
-        if (connectedPillboxes.contains(pillboxName)) {
-            connectedPillboxes.remove(pillboxName)
-            availablePillboxes.add(pillboxName)
-        }
     }
 }
 
@@ -105,6 +91,13 @@ fun HomeScreen(
     var showDisconnectDialog by remember { mutableStateOf(false) }
     var pillboxToDisconnect by remember { mutableStateOf<String?>(null) }
 
+    // State for medicine selection dialog
+    val showMedicationDialog = remember { mutableStateOf(false) }
+    val selectedMedication = remember { mutableStateOf<MedicineModel?>(null) }
+    val medicineDataStore = remember { MedicineDataStore(context) }
+    val medications by medicineDataStore.getMedicine.collectAsState(initial = emptyList())
+    val scope = rememberCoroutineScope()
+
     // Launcher for Bluetooth enable request
     val bluetoothEnableLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -122,31 +115,6 @@ fun HomeScreen(
         }
     }
 
-    // Handle pillbox connection animation
-    LaunchedEffect(pillboxToConnect) {
-        val currentPillbox = pillboxToConnect
-        if (currentPillbox != null) {
-            isConnecting = true
-            animatingPillbox.value = currentPillbox
-            connectionCompleted.value = false
-            // Simulate connection time
-            delay(2000)
-            connectionCompleted.value = true
-            delay(1000)
-            isConnecting = false
-            // Move pillbox from available to connected list with animation
-            delay(300) // Slight delay before starting the transfer
-            if (availablePillboxes.contains(currentPillbox)) {
-                availablePillboxes.remove(currentPillbox)
-                connectedPillboxes.add(currentPillbox)
-            }
-            // Reset states
-            delay(500)
-            connectionCompleted.value = false
-            animatingPillbox.value = null
-            pillboxToConnect = null
-        }
-    }
     // Handle pillbox disconnection animation
     LaunchedEffect(disconnectingPillbox.value) {
         val pillbox = disconnectingPillbox.value
@@ -183,6 +151,7 @@ fun HomeScreen(
     val connectToPillbox: (String) -> Unit = { pillbox ->
         showPillboxSelection = false
         pillboxToConnect = pillbox
+        showMedicationDialog.value = true
     }
 
     // Function to initiate pillbox disconnection
@@ -197,6 +166,7 @@ fun HomeScreen(
             showDisconnectDialog = false
             disconnectingPillbox.value = pillbox
             pillboxToDisconnect = null
+            PillboxStateManager.pillboxToMedicationMap.remove(pillbox)
         }
     }
 
@@ -420,6 +390,72 @@ fun HomeScreen(
         )
     }
 
+    // Display medicine dialog
+    if (showMedicationDialog.value) {
+        AlertDialog(
+            onDismissRequest = { showMedicationDialog.value = false },
+            title = { Text("Select Medication for Pillbox") },
+            text = {
+                Column {
+                    // Only displays medicine that hasn't used
+                    val usedMedications = PillboxStateManager.pillboxToMedicationMap.values.toSet()
+                    val availableMedications = medications.filterNot { it in usedMedications }
+
+                    availableMedications.forEach { med ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp)
+                                .clickable {
+                                    selectedMedication.value = med
+                                    showMedicationDialog.value = false
+
+                                    // Delay to trigger Bluetooth connecting animation
+                                    val currentPillbox = pillboxToConnect
+                                    if (currentPillbox != null) {
+                                        isConnecting = true
+                                        animatingPillbox.value = currentPillbox
+                                        connectionCompleted.value = false
+                                        PillboxStateManager.pillboxToMedicationMap[currentPillbox] = med
+
+                                        // Start animation
+                                        scope.launch {
+                                            delay(2000)
+                                            connectionCompleted.value = true
+                                            delay(1000)
+                                            isConnecting = false
+                                            delay(300)
+
+                                            if (availablePillboxes.contains(currentPillbox)) {
+                                                availablePillboxes.remove(currentPillbox)
+                                                connectedPillboxes.add(currentPillbox)
+                                            }
+
+                                            delay(500)
+                                            connectionCompleted.value = false
+                                            animatingPillbox.value = null
+                                            pillboxToConnect = null
+                                        }
+                                    }
+                                },
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Text(
+                                text = med.name,
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showMedicationDialog.value = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -587,6 +623,7 @@ fun HomeScreen(
             } else {
                 connectedPillboxes.forEach { pillbox ->
                     val animatedState = remember { MutableTransitionState(false).apply { targetState = true } }
+                    val boundMedication = PillboxStateManager.pillboxToMedicationMap[pillbox]?.name ?: "No medication assigned"
 
                     AnimatedVisibility(
                         visibleState = animatedState,
@@ -610,16 +647,17 @@ fun HomeScreen(
                                 },
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
                                     text = pillbox,
                                     style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.weight(1f)
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Medication: $boundMedication",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.DarkGray
                                 )
                             }
                         }
