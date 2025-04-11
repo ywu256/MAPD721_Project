@@ -1,5 +1,4 @@
 package com.group1.mapd721_project
-
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,19 +11,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
-data class Medication(
-    val name: String,
-    val format: String,
-    val dosage: String,
-    val frequency: String,
-    val time: String
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,55 +24,18 @@ fun MedicationListScreen(
     modifier: Modifier = Modifier,
     onAddMedicationClick: () -> Unit = {},
     onNavigate: (String) -> Unit = {}, // for navController.navigate
-    currentRoute: String = "medication_list"
+    currentRoute: String = "medication_list",
+    medicineDataStore: MedicineDataStore = MedicineDataStore(LocalContext.current)
 ) {
-    // Mock medication data
-    val medications = remember {
-        mutableStateListOf(
-            Medication(
-                name = "Metformin",
-                format = "Tablet",
-                dosage = "500mg",
-                frequency = "Everyday",
-                time = "08:00 AM"
-            ),
-            Medication(
-                name = "Vitamin D",
-                format = "Capsule",
-                dosage = "1000 IU",
-                frequency = "Specific Days of the Week",
-                time = "09:00 AM"
-            ),
-            Medication(
-                name = "Ibuprofen",
-                format = "Liquid",
-                dosage = "200mg",
-                frequency = "Every Few Days",
-                time = "07:30 PM"
-            ),
-            Medication(
-                name = "Amoxicillin",
-                format = "Tablet",
-                dosage = "250mg",
-                frequency = "Everyday",
-                time = "12:00 PM"
-            ),
-            Medication(
-                name = "Cetirizine",
-                format = "Tablet",
-                dosage = "10mg",
-                frequency = "Specific Days of the Week",
-                time = "06:30 PM"
-            ),
-            Medication(
-                name = "Omeprazole",
-                format = "Capsule",
-                dosage = "20mg",
-                frequency = "Every Few Days",
-                time = "08:00 AM"
-            )
-        )
+    var medications by remember { mutableStateOf<List<MedicineModel>>(emptyList()) }
+    LaunchedEffect(Unit) {
+        medicineDataStore.getMedicine.collect { medicineList ->
+            for (med in medicineList) {
+            }
+            medications = medicineList
+        }
     }
+
     var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
@@ -176,7 +131,7 @@ fun MedicationListScreen(
 }
 
 @Composable
-fun MedicationCard(med: Medication, onNavigate: (String) -> Unit) {
+fun MedicationCard(med: MedicineModel, onNavigate: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -201,7 +156,7 @@ fun MedicationCard(med: Medication, onNavigate: (String) -> Unit) {
                 color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
@@ -224,7 +179,15 @@ fun MedicationCard(med: Medication, onNavigate: (String) -> Unit) {
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Frequency: ${med.frequency}", style = MaterialTheme.typography.bodyMedium)
+                val frequencyText = when(med.frequency) {
+                    Frequency.DAILY -> "Daily"
+                    Frequency.WEEKLY -> {
+                        val days = med.daysOfWeek.joinToString(", ")
+                        "On $days"
+                    }
+                    Frequency.INTERVAL -> "Every ${med.interval} days"
+                }
+                Text("Frequency: $frequencyText", style = MaterialTheme.typography.bodyMedium)
             }
 
             Spacer(modifier = Modifier.height(4.dp))
