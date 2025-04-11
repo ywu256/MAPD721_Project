@@ -72,6 +72,14 @@ class BluetoothManager(private val context: Context) {
         _showBluetoothDialog.value = false
     }
 
+    private val _hasUserConsent = MutableStateFlow(false)
+    val hasUserConsent: StateFlow<Boolean> = _hasUserConsent.asStateFlow()
+
+    // Method to reset user consent on logout
+    fun resetUserConsent() {
+        _hasUserConsent.value = false
+    }
+
     @SuppressLint("MissingPermission")
     fun enableBluetooth(activityResultLauncher: ActivityResultLauncher<Intent>) {
         if (bluetoothAdapter == null) {
@@ -86,6 +94,11 @@ class BluetoothManager(private val context: Context) {
             if (!bluetoothAdapter.isEnabled) {
                 val enableBTIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
                 activityResultLauncher.launch(enableBTIntent)
+                // Set user consent to true when they explicitly enable Bluetooth
+                _hasUserConsent.value = true
+            } else {
+                // If Bluetooth is already enabled, still mark as user consented explicitly
+                _hasUserConsent.value = true
             }
         } catch (securityException: SecurityException) {
             Toast.makeText(context, "Bluetooth permission required", Toast.LENGTH_SHORT).show()

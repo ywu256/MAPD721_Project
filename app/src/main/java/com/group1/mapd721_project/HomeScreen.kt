@@ -4,6 +4,15 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,8 +31,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
+// Create a companion object to store the pillbox state
+object PillboxStateManager {
+    val connectedPillboxes = mutableStateListOf<String>()
+    val availablePillboxes = mutableStateListOf<String>()
+
+    // Initialize with default available pillboxes if not already initialized
+    fun initializeIfNeeded() {
+        if (availablePillboxes.isEmpty() && connectedPillboxes.isEmpty()) {
+            availablePillboxes.addAll(listOf("Pillbox A", "Pillbox B", "Pillbox C"))
+        }
+    }
+    fun clearConnectedDevices() {
+        // Move all connected devices back to available
+        availablePillboxes.addAll(connectedPillboxes)
+        connectedPillboxes.clear()
+    }
+}
+
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onNavigate: (String) -> Unit = {},
@@ -31,8 +58,17 @@ fun HomeScreen(
     bluetoothManager: BluetoothManager = BluetoothManager(LocalContext.current)
 ) {
     val context = LocalContext.current
-    val connectedPillboxes = listOf("Pillbox A")
-    val availablePillboxes = remember { mutableStateListOf("Pillbox A", "Pillbox B", "Pillbox C") } // Simulated list
+
+    // Initialize the pillbox state if needed
+    PillboxStateManager.initializeIfNeeded()
+
+    // Use the shared state for pillboxes
+    val connectedPillboxes = remember { PillboxStateManager.connectedPillboxes }
+    val availablePillboxes = remember { PillboxStateManager.availablePillboxes }
+
+    // Animation states
+    val connectionCompleted = remember { mutableStateOf(false) }
+    val animatingPillbox = remember { mutableStateOf<String?>(null) }
 
     // Bluetooth states
     var showPillboxSelection by remember { mutableStateOf(false) }
@@ -58,12 +94,31 @@ fun HomeScreen(
         }
     }
 
-    // Handle pillbox connection
+    // Handle pillbox connection animation
     LaunchedEffect(pillboxToConnect) {
-        if (pillboxToConnect != null) {
+        val currentPillbox = pillboxToConnect
+        if (currentPillbox != null) {
             isConnecting = true
-            delay(2000) // Simulate connection time
+            animatingPillbox.value = currentPillbox
+
+            // Simulate connection time
+            delay(2000)
+
+            // Connection completed
             isConnecting = false
+            connectionCompleted.value = true
+
+            // Move pillbox from available to connected list with animation
+            delay(300) // Slight delay before starting the transfer
+            if (availablePillboxes.contains(currentPillbox)) {
+                availablePillboxes.remove(currentPillbox)
+                connectedPillboxes.add(currentPillbox)
+            }
+
+            // Reset states
+            delay(500)
+            connectionCompleted.value = false
+            animatingPillbox.value = null
             pillboxToConnect = null
         }
     }
@@ -82,6 +137,7 @@ fun HomeScreen(
         showPillboxSelection = false
         pillboxToConnect = pillbox
     }
+
     // Bluetooth Enable Dialog
     if (showBluetoothDialog) {
         AlertDialog(
@@ -112,6 +168,7 @@ fun HomeScreen(
             }
         )
     }
+
     // Pillbox Selection Dialog
     if (showPillboxSelection) {
         AlertDialog(
@@ -151,7 +208,8 @@ fun HomeScreen(
             }
         )
     }
-    // Connection Progress Dialog
+
+    // Connection Progress Dialog with Animation
     if (isConnecting) {
         AlertDialog(
             onDismissRequest = { /* Don't allow dismiss while connecting */ },
@@ -159,13 +217,56 @@ fun HomeScreen(
                 Text("Connecting...")
             },
             text = {
-                Column {
-                    Text("Connecting to selected pillbox...")
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    // Use null-safe access for pillboxToConnect
+                    val currentPillbox = pillboxToConnect
+                    Text("Connecting to ${currentPillbox ?: "selected pillbox"}...")
                     Spacer(modifier = Modifier.height(16.dp))
-                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+
+                    // Animated progress indicator
+                    val progressAnimation = remember { mutableStateOf(0f) }
+
+                    LaunchedEffect(isConnecting) {
+                        // Animate from 0 to 1 over the connection duration
+                        val steps = 100
+                        val stepDuration = 2000 / steps
+                        for (i in 1..steps) {
+                            progressAnimation.value = i.toFloat() / steps
+                            delay(stepDuration.toLong())
+                        }
+                    }
+
+                    LinearProgressIndicator(
+                        progress = { progressAnimation.value },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Show animation completion message
+                    AnimatedVisibility(
+                        visible = connectionCompleted.value,
+                        enter = fadeIn() + slideInVertically(),
+                        exit = fadeOut() + slideOutVertically()
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(top = 16.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = "Connected",
+                                tint = Color.Green
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Connected successfully!")
+                        }
+                    }
                 }
             },
-            confirmButton = {}
+            confirmButton = {},
+            dismissButton = {}
         )
     }
 
@@ -248,6 +349,70 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
+            // Available Pillboxes Section
+            Text(
+                text = "Available Pillboxes",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            if (availablePillboxes.isEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Text(
+                        text = "No available pillboxes",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                availablePillboxes.forEach { pillbox ->
+                    // Skip animation for the currently animating pillbox
+                    if (pillbox != animatingPillbox.value) {
+                        AnimatedVisibility(
+                            visible = true,
+                            enter = fadeIn(animationSpec = tween(durationMillis = 500)) +
+                                    slideInVertically(
+                                        animationSpec = tween(durationMillis = 500)
+                                    ),
+                            exit = fadeOut(animationSpec = tween(durationMillis = 300)) +
+                                    slideOutVertically(
+                                        animationSpec = tween(durationMillis = 300)
+                                    )
+                        ) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp)
+                                    .clickable { /* Add navigation */ },
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = pillbox,
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Connected Pillboxes Section
             Text(
                 text = "Connected Pillboxes",
                 style = MaterialTheme.typography.titleMedium,
@@ -255,24 +420,50 @@ fun HomeScreen(
                 modifier = Modifier.padding(vertical = 8.dp)
             )
 
-            connectedPillboxes.forEach { pillbox ->
+            if (connectedPillboxes.isEmpty()) {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    Text(
+                        text = "No pillboxes connected",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                }
+            } else {
+                connectedPillboxes.forEach { pillbox ->
+                    val animatedState = remember { MutableTransitionState(false).apply { targetState = true } }
+
+                    AnimatedVisibility(
+                        visibleState = animatedState,
+                        enter = fadeIn(animationSpec = tween(durationMillis = 500)) +
+                                slideInVertically(
+                                    animationSpec = tween(durationMillis = 500, easing = FastOutSlowInEasing)
+                                ) { height -> -height },
+                        exit = fadeOut()
                     ) {
-                        Text(
-                            text = pillbox,
-                            style = MaterialTheme.typography.bodyLarge,
-                            modifier = Modifier.weight(1f)
-                        )
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 8.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = pillbox,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+                        }
                     }
                 }
             }

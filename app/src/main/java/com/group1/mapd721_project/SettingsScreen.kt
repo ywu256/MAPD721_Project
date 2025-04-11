@@ -293,6 +293,8 @@ fun SettingsScreen(
                                 onClick = {
                                     scope.launch {
                                         userPreferencesManager.clearUser()
+                                        PillboxStateManager.clearConnectedDevices()
+                                        bluetoothManager.resetUserConsent()
                                         Toast.makeText(
                                             context,
                                             "Logged out successfully",
