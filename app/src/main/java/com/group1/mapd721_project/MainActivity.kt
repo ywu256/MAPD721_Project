@@ -81,11 +81,12 @@ class MainActivity : ComponentActivity() {
                             MedicationListScreen(
                                 onNavigate = { navController.navigate(it) },
                                 onAddMedicationClick = { navController.navigate("add_medication") },
-                                currentRoute = "medication_list"
+                                currentRoute = "medication_list",
                             )
                         }
                         composable("add_medication") {
                             val context = LocalContext.current
+
                             AddMedicineScreen(
                                 currentRoute = "medication_list",
                                 onNavigate = { navController.navigate(it) },

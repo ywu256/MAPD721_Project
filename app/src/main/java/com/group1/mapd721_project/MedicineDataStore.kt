@@ -4,13 +4,9 @@ import android.content.Context
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-//import kotlinx.serialization.json.Json
-
-
 class MedicineDataStore(private val context: Context) {
     companion object{
 
@@ -21,7 +17,6 @@ class MedicineDataStore(private val context: Context) {
     // save new medicine
     suspend fun saveMedicine(newMedicine: MedicineModel) {
         context.dataStore.edit { preferences ->
-            context.dataStore.edit { preferences ->
                 // generate key based on the medicine name
                 preferences[stringPreferencesKey("${newMedicine.name}_time")] = newMedicine.time
                 preferences[stringPreferencesKey("${newMedicine.name}_frequency")] =
@@ -48,7 +43,7 @@ class MedicineDataStore(private val context: Context) {
                         (existingNames + newMedicine.name).joinToString(",")
                 }
             }
-        }
+
     }
 
     // delete medicine
@@ -91,8 +86,12 @@ class MedicineDataStore(private val context: Context) {
                     preferences[stringPreferencesKey("${medicineName}_interval")]?.toIntOrNull()
                         ?: 0
                 val daysString = preferences[stringPreferencesKey("${medicineName}_days")] ?: ""
-                val daysOfWeek = daysString.split(",").map {
-                    DaysOfWeek.valueOf(it)
+                val daysOfWeek = try{
+                    daysString.split(",").map {
+                        DaysOfWeek.valueOf(it)
+                    }
+                }catch (e: Exception){
+                    emptyList()
                 }
                 MedicineModel(
                     name = medicineName,

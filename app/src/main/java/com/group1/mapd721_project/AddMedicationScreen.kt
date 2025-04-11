@@ -113,9 +113,7 @@ fun AddMedicineScreen(
     val horizontalPadding = 16.dp
     val verticalSpacing = 16.dp
     val sectionSpacing = 24.dp
-
-    //val medicineDataStore by remember { mutableStateOf(MedicineDataStore(context) }
-
+    
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
