@@ -1,5 +1,4 @@
 package com.group1.mapd721_project
-import android.app.TimePickerDialog
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,38 +11,26 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxColors
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TimeInput
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.getValue
@@ -51,23 +38,25 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-
+import java.time.DayOfWeek
+import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddMedicineScreen(
-    currentRoute: String = "medication_list",
-    onNavigate: (String) -> Unit = {},
-    navController: NavController
+    navController: NavController,
+    medicineDataStore: MedicineDataStore,
+    medicineWorkManager: MedicineAlarmManager
 ) {
     // medicine format list
     val formats = listOf("Capsule", "Tablet", "Liquid", "Topical", "Others")
@@ -93,7 +82,7 @@ fun AddMedicineScreen(
         derivedStateOf {
             val time = LocalTime.of(timeDialogState.hour, timeDialogState.minute)
             DateTimeFormatter.ofPattern("hh:mm a").format(time)
-                 }
+        }
     }
 
     // for interval
@@ -106,43 +95,13 @@ fun AddMedicineScreen(
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(
-                    "New Medication",
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.headlineMedium
-                ) },
+                title = { Text("New Medication", fontWeight = FontWeight.Bold,) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    selected = currentRoute == "home",
-                    onClick = { onNavigate("home") },
-                    icon = { Icon(painter = painterResource(id = R.drawable.home), contentDescription = "Home") },
-                    label = { Text("Home", fontSize = 16.sp) }
+
                 )
-                NavigationBarItem(
-                    selected = currentRoute == "medication_list",
-                    onClick = { /* stay here */ },
-                    icon = { Icon(painter = painterResource(id = R.drawable.medication), contentDescription = "Medication") },
-                    label = { Text("Medication", fontSize = 16.sp) }
-                )
-                NavigationBarItem(
-                    selected = currentRoute == "settings",
-                    onClick = { onNavigate("settings") },
-                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
-                    label = { Text("Settings", fontSize = 16.sp) }
-                )
-            }
         }
     ) { paddingValues ->
         Box(
@@ -272,7 +231,7 @@ fun AddMedicineScreen(
                     "Specific Days of the Week" -> {
                         Spacer(modifier = Modifier.height(verticalSpacing))
                         Text("Days of the week:", fontSize = 16.sp)
-                       // display checkboxes for each day of the week
+                        // display checkboxes for each day of the week
                         Column(
                             modifier = Modifier.fillMaxWidth()
                                 .padding(5.dp)) {
@@ -299,7 +258,7 @@ fun AddMedicineScreen(
                                     )
                                     Text(text = day)
                                 }
-                                
+
                             }
                         }
 
@@ -308,12 +267,12 @@ fun AddMedicineScreen(
                     "Every Few Days" -> {
                         Spacer(modifier = Modifier.height(verticalSpacing))
                         Text("Interval (days):", fontSize = 16.sp)
-                            OutlinedTextField(
-                                value = dayInterval,
-                                onValueChange = { dayInterval = it },
-                                label = { Text("days") },
-                                placeholder = { Text("Every interval days") }
-                            )
+                        OutlinedTextField(
+                            value = dayInterval,
+                            onValueChange = { dayInterval = it },
+                            label = { Text("days") },
+                            placeholder = { Text("Every interval days") }
+                        )
 
 
                     }
@@ -329,7 +288,44 @@ fun AddMedicineScreen(
                 Spacer(modifier = Modifier.height(sectionSpacing))
                 Button(
                     onClick = {
-                        // save medicine to datastore, and navigate to medication list screen
+                        val medicine = MedicineModel(
+                            name = medicationName,
+                            time = formattedTime,
+                            frequency = when (selectedFrequency) {
+                                "Everyday" -> Frequency.DAILY
+                                "Specific Days of the Week" -> Frequency.WEEKLY
+                                "Every Few Days" -> Frequency.INTERVAL
+                                else -> Frequency.DAILY // Default
+                            },
+                            daysOfWeek = if (selectedFrequency == "Specific Days of the Week") {
+                                // Convert your string days to DayOfWeek enum values
+                                selectedDays.map { dayString ->
+                                    when (dayString) {
+                                        "Monday" -> DaysOfWeek.MONDAY
+                                        "Tuesday" -> DaysOfWeek.TUESDAY
+                                        "Wednesday" -> DaysOfWeek.WEDNESDAY
+                                        "Thursday" -> DaysOfWeek.THURSDAY
+                                        "Friday" -> DaysOfWeek.FRIDAY
+                                        "Saturday" -> DaysOfWeek.SATURDAY
+                                        "Sunday" -> DaysOfWeek.SUNDAY
+                                        else -> DaysOfWeek.MONDAY // Default
+                                    }
+                                }
+                            } else {
+                                emptyList()
+                            },
+                            interval = if (selectedFrequency == "Every Few Days") {
+                                dayInterval.toInt()
+                            } else {
+                                0
+                            }
+                        )
+                        CoroutineScope(Dispatchers.IO).launch {
+                            medicineDataStore.saveMedicine(medicine)
+                            medicineWorkManager.scheduleMedicineReminder(medicine)
+                            navController.popBackStack()
+                        }
+
                     },
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -341,9 +337,13 @@ fun AddMedicineScreen(
     }
 }
 
+
 @Preview(showBackground = true)
 @Composable
 fun AddMedicineScreenPreview() {
-    val navController = rememberNavController()
-    AddMedicineScreen(navController = navController)
+    AddMedicineScreen(
+        navController = NavController(LocalContext.current),
+        medicineDataStore = MedicineDataStore(LocalContext.current),
+        medicineWorkManager = MedicineAlarmManager(LocalContext.current)
+    )
 }

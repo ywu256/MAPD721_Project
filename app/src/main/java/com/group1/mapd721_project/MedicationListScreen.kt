@@ -81,6 +81,7 @@ fun MedicationListScreen(
             )
         )
     }
+    val savedMedications = remember { mutableStateListOf<Medication>() }
     var searchQuery by remember { mutableStateOf("") }
 
     Scaffold(
