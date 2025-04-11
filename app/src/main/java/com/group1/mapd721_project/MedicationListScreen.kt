@@ -1,5 +1,6 @@
 package com.group1.mapd721_project
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -166,7 +167,7 @@ fun MedicationListScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredMedications) { med ->
-                        MedicationCard(med = med)
+                        MedicationCard(med = med, onNavigate = onNavigate)
                     }
                 }
             }
@@ -175,11 +176,14 @@ fun MedicationListScreen(
 }
 
 @Composable
-fun MedicationCard(med: Medication) {
+fun MedicationCard(med: Medication, onNavigate: (String) -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable {
+                onNavigate("medication_detail/${med.name.replace(" ", "_")}")
+            },
         elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
