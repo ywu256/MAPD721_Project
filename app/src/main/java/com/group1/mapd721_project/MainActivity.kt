@@ -85,9 +85,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("add_medication") {
                             AddMedicineScreen(
-                                navController = navController,
-                                medicineDataStore = MedicineDataStore(context),
-                                medicineWorkManager = MedicineAlarmManager(context)
+                                currentRoute = "medication_list",
+                                onNavigate = { navController.navigate(it) },
+                                navController = navController
                             )
                         }
                         composable("medication_detail/{medicationId}",) { backStackEntry ->
