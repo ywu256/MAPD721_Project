@@ -72,4 +72,5 @@ dependencies {
     // added dependicies
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.3")
     implementation ("androidx.compose.material3:material3:1.3.2")
+    implementation("androidx.bluetooth:bluetooth:1.0.0-alpha02")
 }

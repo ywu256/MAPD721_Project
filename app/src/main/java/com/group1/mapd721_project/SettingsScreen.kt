@@ -1,6 +1,12 @@
 package com.group1.mapd721_project
 
+import android.content.Intent
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,8 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,7 +27,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen (
+fun SettingsScreen(
     onLogout: () -> Unit = {},
     onNavigate: (String) -> Unit = {},
     currentRoute: String = "settings",
@@ -32,14 +36,50 @@ fun SettingsScreen (
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
+    // Initialize BluetoothManager with cleanup
+    val bluetoothManager = remember { BluetoothManager(context) }
+    DisposableEffect(bluetoothManager) {
+        onDispose {
+            bluetoothManager.cleanup()
+        }
+    }
+
+    // Collect Bluetooth state
+    val isBluetoothEnabled by bluetoothManager.isBluetoothEnabled.collectAsState()
+    val showBluetoothDialog by bluetoothManager.showBluetoothDialog.collectAsState()
+
+    // Check if Bluetooth is supported
+    val isBluetoothSupported = remember { bluetoothManager.isBluetoothSupported() }
+
+    // Bluetooth enable request launcher
+    val bluetoothEnableLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        // Update state after activity result
+        bluetoothManager.updateBluetoothState()
+    }
+
+    // Permission request launcher
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.all { it.value }) {
+            // Permissions granted, update state
+            bluetoothManager.updateBluetoothState()
+        } else {
+            Toast.makeText(context, "Bluetooth permissions required", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     var email by remember { mutableStateOf("") }
     val darkModeEnabled by userPreferencesManager.darkModeFlow.collectAsState(initial = false)
-    var bluetoothEnabled by remember { mutableStateOf(false) }
     var showLogoutAlert by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         val userData = userPreferencesManager.getUser()
         email = userData.first ?: "Not logged in"
+        // Update Bluetooth state on launch
+        bluetoothManager.updateBluetoothState()
     }
 
     MAPD721_ProjectTheme(darkTheme = darkModeEnabled) {
@@ -60,7 +100,10 @@ fun SettingsScreen (
                 )
             },
             bottomBar = {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ) {
                     NavigationBarItem(
                         selected = currentRoute == "home",
                         onClick = { onNavigate("home") },
@@ -130,6 +173,7 @@ fun SettingsScreen (
                         )
                     }
                 }
+
                 // Connectivity
                 Text(
                     text = "Connectivity",
@@ -137,6 +181,7 @@ fun SettingsScreen (
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
+
                 // Bluetooth Item
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -159,12 +204,31 @@ fun SettingsScreen (
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )
-                        Switch(
-                            checked = bluetoothEnabled,
-                            onCheckedChange = { bluetoothEnabled = it }
-                        )
+
+                        if (isBluetoothSupported) {
+                            Switch(
+                                checked = isBluetoothEnabled,
+                                onCheckedChange = { checked ->
+                                    if (!bluetoothManager.hasBluetoothPermission()) {
+                                        permissionLauncher.launch(bluetoothManager.getRequiredPermissions())
+                                    } else {
+                                        if (checked) {
+                                            bluetoothManager.enableBluetooth(bluetoothEnableLauncher)
+                                        } else {
+                                            bluetoothManager.disableBluetooth()
+                                        }
+                                    }
+                                }
+                            )
+                        } else {
+                            Text(
+                                text = "Not supported",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
                 }
+
                 // Appearance Section
                 Text(
                     text = "Appearance",
@@ -205,8 +269,23 @@ fun SettingsScreen (
                         )
                     }
                 }
+
                 Spacer(Modifier.weight(1f))
+
                 // Logout Button
+                Column(modifier = Modifier.padding(vertical = 16.dp)) {
+                    Button(
+                        onClick = { showLogoutAlert = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            "Logout",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
+                }
+
+                // Logout Dialog
                 if (showLogoutAlert) {
                     AlertDialog(
                         onDismissRequest = { showLogoutAlert = false },
@@ -221,8 +300,7 @@ fun SettingsScreen (
                                             context,
                                             "Logged out successfully",
                                             Toast.LENGTH_SHORT
-                                        )
-                                            .show()
+                                        ).show()
                                         onLogout()
                                         showLogoutAlert = false
                                     }
@@ -240,16 +318,35 @@ fun SettingsScreen (
                         }
                     )
                 }
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Button(
-                        onClick = { showLogoutAlert = true },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            "Logout",
-                            style = MaterialTheme.typography.bodyLarge
-                        )
-                    }
+
+                // Bluetooth Turn Off Dialog
+                if (showBluetoothDialog) {
+                    AlertDialog(
+                        onDismissRequest = { bluetoothManager.dismissDialog() },
+                        title = { Text("Turn Off Bluetooth") },
+                        text = {
+                            Text("On Android 12 and above, apps cannot directly turn off Bluetooth. " +
+                                    "Would you like to go to Bluetooth settings to turn it off?")
+                        },
+                        confirmButton = {
+                            Button(
+                                onClick = {
+                                    bluetoothManager.openBluetoothSettings()
+                                }
+                            ) {
+                                Text("Open Settings")
+                            }
+                        },
+                        dismissButton = {
+                            Button(
+                                onClick = {
+                                    bluetoothManager.dismissDialog()
+                                }
+                            ) {
+                                Text("Cancel")
+                            }
+                        }
+                    )
                 }
             }
         }
