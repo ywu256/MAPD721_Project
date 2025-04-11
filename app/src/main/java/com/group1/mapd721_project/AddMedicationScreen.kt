@@ -12,6 +12,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
@@ -22,7 +25,11 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
@@ -44,17 +51,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.Role.Companion.Button
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddMedicineScreen() {
+fun AddMedicineScreen(
+    currentRoute: String = "medication_list",
+    onNavigate: (String) -> Unit = {},
+    navController: NavController
+) {
     // medicine format list
     val formats = listOf("Capsule", "Tablet", "Liquid", "Topical", "Others")
     // days of week list
@@ -92,13 +106,43 @@ fun AddMedicineScreen() {
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text("New Medication", fontWeight = FontWeight.Bold,) },
+                title = { Text(
+                    "New Medication",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.headlineMedium
+                ) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 ),
-
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                    }
+                }
             )
+        },
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    selected = currentRoute == "home",
+                    onClick = { onNavigate("home") },
+                    icon = { Icon(painter = painterResource(id = R.drawable.home), contentDescription = "Home") },
+                    label = { Text("Home", fontSize = 16.sp) }
+                )
+                NavigationBarItem(
+                    selected = currentRoute == "medication_list",
+                    onClick = { /* stay here */ },
+                    icon = { Icon(painter = painterResource(id = R.drawable.medication), contentDescription = "Medication") },
+                    label = { Text("Medication", fontSize = 16.sp) }
+                )
+                NavigationBarItem(
+                    selected = currentRoute == "settings",
+                    onClick = { onNavigate("settings") },
+                    icon = { Icon(Icons.Default.Settings, contentDescription = "Settings") },
+                    label = { Text("Settings", fontSize = 16.sp) }
+                )
+            }
         }
     ) { paddingValues ->
         Box(
@@ -300,5 +344,6 @@ fun AddMedicineScreen() {
 @Preview(showBackground = true)
 @Composable
 fun AddMedicineScreenPreview() {
-    AddMedicineScreen()
+    val navController = rememberNavController()
+    AddMedicineScreen(navController = navController)
 }

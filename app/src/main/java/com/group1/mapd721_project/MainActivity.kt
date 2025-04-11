@@ -85,7 +85,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable("add_medication") {
                             AddMedicineScreen(
-
+                                currentRoute = "medication_list",
+                                onNavigate = { navController.navigate(it) },
+                                navController = navController
                             )
                         }
                         composable("medication_detail/{medicationId}",) { backStackEntry ->
@@ -104,6 +106,10 @@ class MainActivity : ComponentActivity() {
                                 currentRoute = "settings",
                                 userPreferencesManager = userPrefs
                             )
+                        }
+                        /* Add Pillbox Screen */
+                        composable("add_pillbox") {
+                            AddPillboxScreen(navController = navController)
                         }
                     }
                 }
