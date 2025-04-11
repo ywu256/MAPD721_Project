@@ -109,7 +109,11 @@ class MainActivity : ComponentActivity() {
                         }
                         /* Add Pillbox Screen */
                         composable("add_pillbox") {
-                            AddPillboxScreen(navController = navController)
+                            AddPillboxScreen(
+                                onNavigate = { navController.navigate(it) },
+                                navController = navController,
+                                currentRoute = "home"
+                            )
                         }
                     }
                 }
