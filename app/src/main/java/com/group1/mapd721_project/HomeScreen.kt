@@ -12,6 +12,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -32,27 +34,7 @@ fun HomeScreen(
     onNavigate: (String) -> Unit = {},
     currentRoute: String = "home"
 ) {
-    var selectedDate by remember { mutableStateOf("Today") }
-    val dateOptions = remember {
-        val formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
-        val today = LocalDate.now()
-        val days = listOf(0, 1, 2, 3, 4)
-
-        days.map { offset ->
-            val date = today.plusDays(offset.toLong())
-            when (offset) {
-                0 -> "Today"
-                1 -> "Tomorrow "
-                else -> date.format(formatter)
-            }
-        }
-    }
-
-    val reminders = listOf(
-        Triple("ASCAP tablets", "123 mg", false),
-        Triple("Vitamin D", "500 IU", false),
-        Triple("Lisinopril", "10 mg", false)
-    )
+    val connectedPillboxes = listOf("Pillbox A")
 
     Scaffold(
         topBar = {
@@ -75,19 +57,13 @@ fun HomeScreen(
 
                         Text(
                             "Welcome back",
-                            fontSize = 25.sp,
+                            style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
 
                         Spacer(modifier = Modifier.weight(1f))
 
-                        IconButton(onClick = { /* TODO: Calendar click */ }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.today),
-                                contentDescription = null // decorative element
-                            )
-                        }
                         IconButton(onClick = { /* TODO: Notification click */ }) {
                             Icon(
                                 Icons.Default.Notifications,
@@ -97,6 +73,13 @@ fun HomeScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { onNavigate("add_pillbox") }
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Add Pillbox")
+            }
         },
         bottomBar = {
             NavigationBar {
@@ -129,60 +112,43 @@ fun HomeScreen(
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Date Tabs (Horizontal Scroll)
-            Row(
-                modifier = Modifier
-                    .horizontalScroll(rememberScrollState())
-                    .fillMaxWidth()
-            ) {
-                dateOptions.forEach { date ->
-                    Text(
-                        text = date,
+            Text(
+                text = "Connected Pillboxes",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+
+            connectedPillboxes.forEach { pillbox ->
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                ) {
+                    Row(
                         modifier = Modifier
-                            .padding(end = 16.dp)
-                            .clickable { selectedDate = date }
-                            .background(
-                                if (selectedDate == date) Color.LightGray else Color.Transparent,
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .padding(horizontal = 12.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Reminder list
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                items(reminders.size) { index ->
-                    val (name, dose, _) = reminders[index]
-                    Card(modifier = Modifier.fillMaxWidth()) {
-                        Row(
-                            modifier = Modifier
-                                .padding(12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .background(Color.Gray) // Placeholder for pill image
-                            )
-
-                            Spacer(modifier = Modifier.width(16.dp))
-
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = name, style = MaterialTheme.typography.titleMedium)
-                                Text(text = dose, style = MaterialTheme.typography.bodySmall)
-                            }
-
-                            Checkbox(
-                                checked = false,
-                                onCheckedChange = { /* Optional: update state */ }
-                            )
-                        }
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = pillbox,
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Connected",
+                            tint = Color.Green
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Connected",
+                            color = Color.Green,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }
