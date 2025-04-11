@@ -350,7 +350,7 @@ fun AddMedicineScreen(
                            Log.d("MedicineDebug", "Frequency set to: $selectedFrequency")
                            val days = if(selectedFrequency == "Specific Days of the Week") {
                                selectedDays.map {
-                                   DaysOfWeek.valueOf(it)
+                                   DaysOfWeek.valueOf(it.uppercase())
                                }
                            } else {
                                emptyList()
