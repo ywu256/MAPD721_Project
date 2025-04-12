@@ -1,7 +1,5 @@
 package com.group1.mapd721_project
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
+
 import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -35,9 +33,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.airbnb.lottie.compose.*
+
 // Create a companion object to store the pillbox state
 object PillboxStateManager {
     val connectedPillboxes = mutableStateListOf<String>()
@@ -51,6 +50,7 @@ object PillboxStateManager {
             availablePillboxes.addAll(listOf("Pillbox A", "Pillbox B", "Pillbox C"))
         }
     }
+
     fun clearConnectedDevices() {
         // Move all connected devices back to available
         availablePillboxes.addAll(connectedPillboxes)
@@ -68,6 +68,7 @@ fun HomeScreen(
 ) {
 
     val context = LocalContext.current
+
     // Initialize the pillbox state if needed
     PillboxStateManager.initializeIfNeeded()
 
@@ -702,17 +703,37 @@ fun HomeScreen(
                                             )
                                         }
                                         "Taken" -> {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    tint = Color(0xFF388E3C)
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.SpaceBetween
+                                            ) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = Color(0xFF388E3C)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text(
+                                                        text = "Medicine taken",
+                                                        color = Color(0xFF388E3C),
+                                                        style = MaterialTheme.typography.bodyLarge
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(12.dp))
+
+                                                val composition by rememberLottieComposition(
+                                                    LottieCompositionSpec.RawRes(R.raw.fireworks_animation)
                                                 )
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(
-                                                    text = "Medicine taken",
-                                                    color = Color(0xFF388E3C),
-                                                    style = MaterialTheme.typography.bodyLarge
+                                                val progress by animateLottieCompositionAsState(
+                                                    composition
+                                                )
+
+                                                LottieAnimation(
+                                                    composition = composition,
+                                                    progress = { progress },
+                                                    modifier = Modifier.size(120.dp)
                                                 )
                                             }
                                         }
