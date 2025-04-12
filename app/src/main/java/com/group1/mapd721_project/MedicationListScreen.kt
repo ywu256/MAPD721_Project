@@ -52,7 +52,7 @@ fun MedicationListScreen(
         },
         floatingActionButton = {
             FloatingActionButton(onClick = onAddMedicationClick) {
-                Text("+")
+                Text("+", style = MaterialTheme.typography.titleLarge)
             }
         },
         bottomBar = {
