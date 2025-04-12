@@ -1,6 +1,7 @@
 package com.group1.mapd721_project
 
 import android.content.Context
+import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.first
@@ -16,6 +17,7 @@ class UserPreferencesManager(private val context: Context) {
         val PASSWORD_KEY = stringPreferencesKey("password")
         val DARK_MODE_KEY = booleanPreferencesKey("dark_mode_enabled")
         val NOTIFICATIONS_KEY = booleanPreferencesKey("notifications_enabled")
+        val PERMISSION_REQUESTED_KEY = booleanPreferencesKey("permission_requested")
     }
 
     // Store email and password
@@ -47,6 +49,12 @@ class UserPreferencesManager(private val context: Context) {
             prefs[DARK_MODE_KEY] = enabled
         }
     }
+
+    val darkModeFlow: Flow<Boolean> = context.dataStore.data.map {
+        preferences ->
+        preferences[DARK_MODE_KEY] ?: false
+    }
+
     // storing notification preference
     suspend fun setNotificationsEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs ->
@@ -54,9 +62,25 @@ class UserPreferencesManager(private val context: Context) {
         }
     }
 
-    val darkModeFlow: Flow<Boolean> = context.dataStore.data.map {
-        preferences ->
-        preferences[DARK_MODE_KEY] ?: false
+    // store the notifications enabled
+    val notificationsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+            preferences[NOTIFICATIONS_KEY] ?: false
+        }
+
+    val getNotificationsEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+            preferences[NOTIFICATIONS_KEY] ?: false
+        }
+
+    // Add a method to store whether permissions were requested
+    suspend fun setPermissionRequested(requested: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[PERMISSION_REQUESTED_KEY] = requested
+        }
+    }
+
+    // Get whether permissions were requested
+    val permissionRequestedFlow: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[PERMISSION_REQUESTED_KEY] ?: false
     }
 
     // Logout - Clean email, password and preferences

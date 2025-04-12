@@ -94,18 +94,14 @@ fun SettingsScreen(
             Toast.makeText(context, "Bluetooth permissions required", Toast.LENGTH_SHORT).show()
         }
     }
-    // notification part:
-
-
-// Add a state for notification preference
-
 
     var email by remember { mutableStateOf("") }
     val darkModeEnabled by userPreferencesManager.darkModeFlow.collectAsState(initial = false)
     val billingManager = remember { MockBillingManager(context) }
     var showLogoutAlert by remember { mutableStateOf(false) }
+    val notificationsEnabled by userPreferencesManager.notificationsEnabled.collectAsState(initial = false)
+    val permissionRequested by userPreferencesManager.permissionRequestedFlow.collectAsState(initial = false)
 
-    // set notification here
     // Cleanup on dispose
     DisposableEffect(billingManager) {
         onDispose {
@@ -311,6 +307,21 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium
                 ) {
+                    // Notification permission launcher
+                    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                        contract = ActivityResultContracts.RequestPermission()
+                    ) { isGranted ->
+                        if (isGranted) {
+                            // Permission granted, enable notifications
+                            scope.launch {
+                                userPreferencesManager.setNotificationsEnabled(true)
+                                Toast.makeText(context, "Notifications turned ON", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            // Permission denied
+                            Toast.makeText(context, "Notification permission required", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                     // notification Item
                     Row(
                         modifier = Modifier
@@ -326,15 +337,34 @@ fun SettingsScreen(
                         )
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
-                            text = "Turn on/off",
+                            text = "Notifications",
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )
                         Switch(
-                            checked = darkModeEnabled,
-                            onCheckedChange = {
-                                scope.launch {
-                                    userPreferencesManager.setDarkModeEnabled(it)
+                            checked = notificationsEnabled,
+                            onCheckedChange = { enabled ->
+                                if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    // For Android 13+, check and request notification permission
+                                    if (ContextCompat.checkSelfPermission(
+                                            context,
+                                            Manifest.permission.POST_NOTIFICATIONS
+                                        ) != PackageManager.PERMISSION_GRANTED
+                                    ) {
+                                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        // Permission already granted
+                                        scope.launch {
+                                            userPreferencesManager.setNotificationsEnabled(true)
+                                            Toast.makeText(context, "Notifications turned ON", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                } else {
+                                    // For Android < 13 or turning off notifications
+                                    scope.launch {
+                                        userPreferencesManager.setNotificationsEnabled(enabled)
+                                        Toast.makeText(context, "Notifications turned OFF", Toast.LENGTH_SHORT).show()
+                                    }
                                 }
                             }
                         )
@@ -377,6 +407,7 @@ fun SettingsScreen(
                                     scope.launch {
                                         userPreferencesManager.clearUser()
                                         PillboxStateManager.clearConnectedDevices()
+                                        userPreferencesManager.setPermissionRequested(false)
                                         bluetoothManager.resetUserConsent()
                                         Toast.makeText(
                                             context,

@@ -6,9 +6,20 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 class RemainderReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
+
+        val userPreferencesManager = UserPreferencesManager(context)
+        val notificationsEnabled = runBlocking {
+            userPreferencesManager.getNotificationsEnabled.first()
+        }
+        if (!notificationsEnabled) {
+            return
+        }
+
         val medicineName = intent.getStringExtra("medicine_name") ?: "Medicine"
         val medicineId = intent.getStringExtra("medicine_id")
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
