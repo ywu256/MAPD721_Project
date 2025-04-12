@@ -94,14 +94,7 @@ class MainActivity : ComponentActivity() {
                                 medicineAlarmManager = MedicineAlarmManager(context)
                             )
                         }
-                        composable("medication_detail/{medicationId}",) { backStackEntry ->
-                            val medicationId = backStackEntry.arguments?.getString("medicationId") ?: ""
-                            MedicationDetails(
-                                medicationId = medicationId,
-                                onNavigateBack = { navController.popBackStack() },
-                               // onEditClick = { /* handle edit medication */ }
-                            )
-                        }
+
                         /* Settings Screen */
                         composable("settings") {
                             SettingsScreen(
@@ -111,14 +104,7 @@ class MainActivity : ComponentActivity() {
                                 userPreferencesManager = userPrefs
                             )
                         }
-                        /* Add Pillbox Screen */
-                        composable("add_pillbox") {
-                            AddPillboxScreen(
-                                onNavigate = { navController.navigate(it) },
-                                navController = navController,
-                                currentRoute = "home"
-                            )
-                        }
+
                     }
                 }
             }
