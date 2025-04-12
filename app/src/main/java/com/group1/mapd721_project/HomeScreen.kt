@@ -3,9 +3,11 @@ import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -41,6 +43,7 @@ object PillboxStateManager {
     val connectedPillboxes = mutableStateListOf<String>()
     val availablePillboxes = mutableStateListOf<String>()
     val pillboxToMedicationMap = mutableStateMapOf<String, MedicineModel>()
+    val pillboxInteractionStates = mutableStateMapOf<String, MutableState<String>>()
 
     // Initializing with default available pillboxes
     fun initializeIfNeeded() {
@@ -625,6 +628,9 @@ fun HomeScreen(
                 connectedPillboxes.forEach { pillbox ->
                     val animatedState = remember { MutableTransitionState(false).apply { targetState = true } }
                     val boundMedication = PillboxStateManager.pillboxToMedicationMap[pillbox]?.name ?: "No medication assigned"
+                    val interactionState = PillboxStateManager.pillboxInteractionStates.getOrPut(pillbox) {
+                        mutableStateOf("Idle")
+                    }
 
                     AnimatedVisibility(
                         visibleState = animatedState,
@@ -641,6 +647,18 @@ fun HomeScreen(
                                 // Add pointerInput to detect long press
                                 .pointerInput(Unit) {
                                     detectTapGestures(
+                                        onTap = {
+                                            Log.d("Pillbox", "Clicked $pillbox !!!!!")
+                                            val current = interactionState.value
+                                            val next = when (current) {
+                                                "Idle" -> "Opened"
+                                                "Opened" -> "Taken"
+                                                "Taken" -> "Closed"
+                                                else -> "Idle"
+                                            }
+                                            interactionState.value = next
+                                            Log.d("Pillbox", "Clicked $pillbox → $current → $next")
+                                        },
                                         onLongPress = {
                                             initiateDisconnect(pillbox)
                                         }
@@ -660,6 +678,56 @@ fun HomeScreen(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Color.DarkGray
                                 )
+                                Spacer(modifier = Modifier.height(8.dp))
+//                                if (interactionState.value != "Idle") {
+//                                    Text(
+//                                        text = "Status: ${interactionState.value}",
+//                                        style = MaterialTheme.typography.labelLarge,
+//                                        color = when (interactionState.value) {
+//                                            "Opened" -> Color(0xFF1976D2)
+//                                            "Taken" -> Color(0xFF388E3C)
+//                                            "Closed" -> Color.Gray
+//                                            else -> Color.Unspecified
+//                                        },
+//                                        modifier = Modifier.padding(top = 4.dp)
+//                                    )
+//                                }
+                                AnimatedContent(targetState = interactionState.value) { state ->
+                                    when (state) {
+                                        "Opened" -> {
+                                            Text(
+                                                text = "Pillbox is opened",
+                                                color = Color(0xFF1976D2),
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                        }
+                                        "Taken" -> {
+                                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = Color(0xFF388E3C)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(
+                                                    text = "Medicine taken",
+                                                    color = Color(0xFF388E3C),
+                                                    style = MaterialTheme.typography.bodyLarge
+                                                )
+                                            }
+                                        }
+                                        "Closed" -> {
+                                            Text(
+                                                text = "Pillbox closed",
+                                                color = Color.Gray,
+                                                style = MaterialTheme.typography.bodyLarge
+                                            )
+                                        }
+                                        else -> {
+                                            Spacer(modifier = Modifier.height(0.dp))
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
