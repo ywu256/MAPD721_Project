@@ -15,6 +15,7 @@ class UserPreferencesManager(private val context: Context) {
         val EMAIL_KEY = stringPreferencesKey("email")
         val PASSWORD_KEY = stringPreferencesKey("password")
         val DARK_MODE_KEY = booleanPreferencesKey("dark_mode_enabled")
+        val NOTIFICATIONS_KEY = booleanPreferencesKey("notifications_enabled")
     }
 
     // Store email and password
@@ -44,6 +45,12 @@ class UserPreferencesManager(private val context: Context) {
     suspend fun setDarkModeEnabled(enabled: Boolean) {
         context.dataStore.edit { prefs ->
             prefs[DARK_MODE_KEY] = enabled
+        }
+    }
+    // storing notification preference
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        context.dataStore.edit { prefs ->
+            prefs[NOTIFICATIONS_KEY] = enabled
         }
     }
 

@@ -1,6 +1,9 @@
 package com.group1.mapd721_project
 
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,6 +43,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.core.content.ContextCompat
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,12 +94,18 @@ fun SettingsScreen(
             Toast.makeText(context, "Bluetooth permissions required", Toast.LENGTH_SHORT).show()
         }
     }
+    // notification part:
+
+
+// Add a state for notification preference
+
 
     var email by remember { mutableStateOf("") }
     val darkModeEnabled by userPreferencesManager.darkModeFlow.collectAsState(initial = false)
     val billingManager = remember { MockBillingManager(context) }
     var showLogoutAlert by remember { mutableStateOf(false) }
 
+    // set notification here
     // Cleanup on dispose
     DisposableEffect(billingManager) {
         onDispose {
@@ -273,6 +287,46 @@ fun SettingsScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Text(
                             text = "Dark Mode",
+                            style = MaterialTheme.typography.bodyLarge,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Switch(
+                            checked = darkModeEnabled,
+                            onCheckedChange = {
+                                scope.launch {
+                                    userPreferencesManager.setDarkModeEnabled(it)
+                                }
+                            }
+                        )
+                    }
+                }
+                // Notification Section
+                Text(
+                    text = "Notification Settings",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(vertical = 8.dp)
+                )
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    // notification Item
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.notifications_48px),
+                            contentDescription = "Notification",
+                            modifier = Modifier.size(30.dp),
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Turn on/off",
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )
