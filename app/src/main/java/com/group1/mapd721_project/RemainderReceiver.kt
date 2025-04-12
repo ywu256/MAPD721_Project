@@ -10,6 +10,7 @@ import android.os.Build
 class RemainderReceiver: BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val medicineName = intent.getStringExtra("medicine_name") ?: "Medicine"
+        val medicineId = intent.getStringExtra("medicine_id")
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel("medicine_channel", "Medicine Reminder", NotificationManager.IMPORTANCE_HIGH)
