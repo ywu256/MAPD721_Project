@@ -62,17 +62,27 @@ class MedicineAlarmManager(
     private fun getTime(time: String): Calendar {
         val formatter = SimpleDateFormat("hh:mm a", Locale.getDefault())
         val date = formatter.parse(time)
-        return Calendar.getInstance().apply {
-            if (date != null) {
-                setTime(date)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                val now = Calendar.getInstance()
-                if (before(now)) {
-                    add(Calendar.DATE, 1)
-                }
+
+        // create a new calender based on current time
+        val calendar = Calendar.getInstance()
+        if (date != null) {
+            val tempCalendar = Calendar.getInstance()
+            // set the temp calender with the passed time
+            tempCalendar.time = date
+            // assign the time to the formal calendar
+            calendar.set(Calendar.HOUR_OF_DAY, tempCalendar.get(Calendar.HOUR_OF_DAY))
+            calendar.set(Calendar.MINUTE, tempCalendar.get(Calendar.MINUTE))
+            calendar.set(Calendar.SECOND, 0)
+            calendar.set(Calendar.MILLISECOND, 0)
+
+            val now = Calendar.getInstance()
+            // if pass the time, schedule for next dat
+            if (calendar.before(now)) {
+                calendar.add(Calendar.DATE, 1)
             }
         }
+
+        return calendar
     }
     private fun scheduleAlarm(medicine: MedicineModel, calendar: Calendar, requestCode: Int = medicine.id.hashCode()) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager

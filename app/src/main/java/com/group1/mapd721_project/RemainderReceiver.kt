@@ -24,7 +24,7 @@ class RemainderReceiver: BroadcastReceiver() {
             .setContentText("Time to take your $medicineName")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .build()
-        notificationManager.notify(medicineName.hashCode(), notification)
+        notificationManager.notify(medicineId.hashCode(), notification)
     }
 
 
