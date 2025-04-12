@@ -485,7 +485,6 @@ fun HomeScreen(
                             "Welcome back",
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
-                            color = Color.Black
                         )
 
                         Spacer(modifier = Modifier.weight(1f))
